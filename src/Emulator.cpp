@@ -33,7 +33,6 @@ Emulator::Emulator()
         }
     }
     
-    
     statInstructionCount = 0;
     
     clsOpcodeFunc();
@@ -90,6 +89,7 @@ void Emulator::cpuCycle()
         if (delayTimer)
             --delayTimer;
         
+        // TODO: implement
         if (soundTimer)
             --soundTimer;
         
