@@ -5,27 +5,38 @@
 #include "Emulator.hpp"
 
 #include <cstdlib>
+#include <string>
+#include <vector>
 
 using namespace ci;
 using namespace ci::app;
+
+const int appDefaultWidth = 640;
+const int appDefaultHeight = 320;
+
+void prepareSettings(App::Settings *settings)
+{
+    settings->setWindowSize(appDefaultWidth, appDefaultHeight);
+    settings->setTitle("Chippy [Chip-8 Emulator/Interpreter]");
+}
 
 #define debug
 
 class ChippyApp : public App {
 public:
     void setup() override;
+    
     void keyDown( KeyEvent event ) override;
     void keyUp( KeyEvent event ) override;
+    
+    void fileDrop( FileDropEvent event ) override;
+    
+    void resize() override;
     void update() override;
     void draw() override;
 
 private:
     Emulator chipEmulator;
-    
-    const std::string testBinary = "/Users/bonsu/dev/Chippy/xcode/build/Debug/Chip8 Picture.ch8";
-//    const std::string testBinary = "/Users/bonsu/dev/Chippy/xcode/build/Debug/test-rnd.ch8";
-//    const std::string testBinary = "/Users/bonsu/dev/Chippy/xcode/build/Debug/test-maze.ch8";
-//    const std::string testBinary = "/Users/bonsu/dev/Chippy/xcode/build/Debug/test-blinky.ch8";
     
     uint8_t texData[32][64][3];
     gl::Texture2dRef screenTexture;
@@ -63,6 +74,10 @@ void ChippyApp::renderDisplayToConsole()
 
 void ChippyApp::setup()
 {
+    // clear texData
+    for (int y = 0; y < 32; ++y)
+        for (int x = 0; x < 64; ++x)
+                texData[y][x][0] = texData[y][x][1] = texData[y][x][2] = 0;
     // init screenTexture
     screenTexture = gl::Texture2d::create(texData, GL_RGB, 64, 32);
     screenTexture->setMinFilter(GL_NEAREST);
@@ -70,11 +85,9 @@ void ChippyApp::setup()
     screenTexture->setTopDown(true);
     textureBounds = screenTexture->getBounds();
     drawBounds = textureBounds.getCenteredFit(getWindowBounds(), true);
-    assert(chipEmulator.loadBinary(testBinary) == true);
-    
 }
 
-void ChippyApp::keyDown( KeyEvent event )
+void ChippyApp::keyDown(KeyEvent event)
 {
     switch (event.getCode()) {
         case KeyEvent::KEY_1:
@@ -128,7 +141,7 @@ void ChippyApp::keyDown( KeyEvent event )
     }
 }
 
-void ChippyApp::keyUp( KeyEvent event )
+void ChippyApp::keyUp(KeyEvent event)
 {
     switch (event.getCode()) {
         case KeyEvent::KEY_1:
@@ -182,19 +195,29 @@ void ChippyApp::keyUp( KeyEvent event )
     }
 }
 
+void ChippyApp::fileDrop(FileDropEvent event)
+{
+    auto file = event.getFile(0);
+    chipEmulator.reset();
+    if (!chipEmulator.loadBinary(file.string()))
+        console() << "could not load " << file.string() << std::endl;
+}
+
+void ChippyApp::resize()
+{
+    drawBounds = textureBounds.getCenteredFit(getWindowBounds(), true);
+}
+
 void ChippyApp::update()
 {
-    static unsigned long updateLoop = 0;
-    
-    
     // run at 60hz say 60 instructions per second
     
-    static double timer = 0;
+    static double clockSpeedTimer = 0;
     static double t60 = 0; // get reset after every second;
     double secondsToWait = (double)1/120;
     
     
-    if ((getElapsedSeconds() - timer) > secondsToWait) {
+    if ((getElapsedSeconds() - clockSpeedTimer) > secondsToWait) {
         chipEmulator.cpuCycle();
     
         if (chipEmulator.drawDisplay) {
@@ -214,20 +237,17 @@ void ChippyApp::update()
         t60 = getElapsedSeconds();
     }
     
-    timer = getElapsedSeconds();
-    updateLoop++;
+    clockSpeedTimer = getElapsedSeconds();
 }
 
 void ChippyApp::draw()
 {
     gl::clear( Color( 0, 0, 0 ) );
 #ifdef debug
-#endif
     
+#endif
     
     gl::draw(screenTexture, drawBounds);
 }
 
-CINDER_APP( ChippyApp,
-            RendererGl,
-            [&]( App::Settings *settings ) { settings->setWindowSize( 640, 320 ); })
+CINDER_APP(ChippyApp, RendererGl, prepareSettings)

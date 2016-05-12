@@ -28,6 +28,7 @@ public:
     
     int statInstructionCount = 0;
     
+    void reset();
     bool loadBinary(const std::string&);
     void cpuCycle();
     void setKeyPressed(uint8_t);
@@ -55,6 +56,8 @@ private:
             uint16_t op_kk;
         };
     };
+    
+    void initialize (bool reset=false);
     
     typedef void (Emulator::*opcodeFunc)();
     

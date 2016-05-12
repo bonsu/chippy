@@ -15,7 +15,7 @@
 
 #include "Emulator.hpp"
 
-#define __NOT_IMPLEMENTED__ assert(false);
+#define __NOT_IMPLEMENTED__ assert(true);
 #define __NOT_IMPLEMENTED_CONTINUE__ return;
 
 std::random_device rd;
@@ -23,24 +23,44 @@ std::mt19937 rndGenerator(rd());
 
 Emulator::Emulator()
 {
-    // load font data into memory;
-    for (uint32_t f : { 0xF999F, 0x26227, 0xF1F8F, 0xF1F1F, 0x99F11, 0xF8F1F, 0xF8F9F, 0xF1244,
-                        0xF9F9F, 0xF9F1F, 0xF9F99, 0xE9E9E, 0xF888F, 0xE999E, 0xF8F8F, 0xF8F88 }) {
-        auto *p = memory;
-        for (int i = 5; i > 0; --i) {
-            uint8_t b = ((f >> ((i - 1) * 4)) & 0xF) << 4;
-            *(p++) = b;
-        }
-    }
-    
-    statInstructionCount = 0;
-    
-    clsOpcodeFunc();
-    
-    pc = 0x200;
+    initialize();
 }
 
 Emulator::~Emulator() {}
+
+void Emulator::initialize(bool reset)
+{
+    if (!reset)
+        for (uint32_t f : { 0xF999F, 0x26227, 0xF1F8F, 0xF1F1F, 0x99F11, 0xF8F1F, 0xF8F9F, 0xF1244,
+                            0xF9F9F, 0xF9F1F, 0xF9F99, 0xE9E9E, 0xF888F, 0xE999E, 0xF8F8F, 0xF8F88 }) {
+           auto *p = memory;
+           for (int i = 5; i > 0; --i) {
+               uint8_t b = ((f >> ((i - 1) * 4)) & 0xF) << 4;
+               *(p++) = b;
+           }
+        }
+    
+    // clear memory
+    for (int i = 0 + 0x50; i < 0x1000; ++i)
+        memory[i] = 0;
+    for (int i = 0; i < 16; ++i)
+        vReg[i] = keys[i] = stack[i] = 0;
+    
+    delayTimer = soundTimer = 0;
+    sp = 0;
+    I = 0;
+    pc = 0x200;
+    
+    statInstructionCount = 0;
+    
+    // clear the display
+    clsOpcodeFunc();
+}
+
+void Emulator::reset()
+{
+    initialize(true);
+}
 
 bool Emulator::loadBinary(const std::string& progName)
 {
@@ -379,5 +399,3 @@ void Emulator::ldRegMemOpcodeFunc()
     for (int i = 0; i < 16; ++i)
         vReg[i] = memory[I + i];
 }
-
-
