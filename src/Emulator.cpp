@@ -22,7 +22,7 @@
 #define __NOT_IMPLEMENTED_CONTINUE__ return;
 
 #ifdef debug
-#define DBG_OUT cinder::app::console() << std::setfill(' ')
+#define DBG_OUT cinder::app::console() << std::setw(0) <<  std::setfill(' ')
 
 #define DBG_PRINT(s) do { DBG_OUT << s << std::endl; } while (0)
 
@@ -45,8 +45,8 @@
                           } while (0)
 
 #define DBG_PRINT_PIXEL_DATA(pixel) do {\
-                                        DBG_OUT << "\t" << "px: 0x" << std::setw(2) << std::setfill('0') << std::right << std::hex << (int)pixel;\
-                                        DBG_OUT << "\t" << std::bitset<8>(pixel) << std::endl;\
+                                        DBG_OUT << "\t" << "px: 0x" << std::setw(2) << std::setfill('0') << std::right << std::hex << (int)pixel \
+                                        << "\t" << std::bitset<8>(pixel) << std::endl;\
                                     } while (0)
 
 #else

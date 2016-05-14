@@ -19,7 +19,11 @@ const int appDefaultHeight = 320;
 void prepareSettings(App::Settings *settings)
 {
     settings->setWindowSize(appDefaultWidth, appDefaultHeight);
+#ifdef debug
+    settings->setTitle("Chippy [Chip-8 Interpreter/Emulator] (Debug Mode)");
+#else
     settings->setTitle("Chippy [Chip-8 Interpreter/Emulator]");
+#endif
 }
 
 
@@ -44,7 +48,10 @@ private:
     gl::Texture2dRef screenTexture;
     Rectf textureBounds;
     Rectf drawBounds;
+    Font fontName;
+    gl::TextureFontRef textureFont;
     
+    bool dbgToggleSingleStepMode = false;
     bool dbgSingleStepKeyPressed = false;
     
     void renderDisplayToTexture();
@@ -89,6 +96,11 @@ void ChippyApp::setup()
     screenTexture->setTopDown(true);
     textureBounds = screenTexture->getBounds();
     drawBounds = textureBounds.getCenteredFit(getWindowBounds(), true);
+    
+    // setup font
+    fontName = Font("Helvetica", 12);
+    textureFont = gl::TextureFont::create(fontName);
+    
 }
 
 void ChippyApp::keyDown(KeyEvent event)
@@ -145,6 +157,8 @@ void ChippyApp::keyDown(KeyEvent event)
         case KeyEvent::KEY_k:
             dbgSingleStepKeyPressed = true;
             break;
+        case KeyEvent::KEY_j:
+            dbgToggleSingleStepMode = !dbgToggleSingleStepMode;
     }
 }
 
@@ -225,14 +239,23 @@ void ChippyApp::update()
     
     if ((getElapsedSeconds() - cpuClockSpeedTimer) > secondsToWait) {
 #ifdef debug
-        if (dbgSingleStepKeyPressed) {
+        if (dbgToggleSingleStepMode) {
+            if (dbgSingleStepKeyPressed) {
+                chipEmulator.cpuCycle();
+                if (chipEmulator.drawDisplay) {
+                    renderDisplayToTexture();
+                    chipEmulator.drawDisplay = false;
+                }
+            }
+            dbgSingleStepKeyPressed = false;
+        }
+        else {
             chipEmulator.cpuCycle();
             if (chipEmulator.drawDisplay) {
                 renderDisplayToTexture();
                 chipEmulator.drawDisplay = false;
             }
         }
-        dbgSingleStepKeyPressed = false;
 #else
         chipEmulator.cpuCycle();
         if (chipEmulator.drawDisplay) {
@@ -255,8 +278,21 @@ void ChippyApp::update()
 
 void ChippyApp::draw()
 {
-    gl::clear( Color( 0, 0, 0 ) );
+    gl::setMatricesWindow(getWindowSize());
+    
+    gl::clear(Color(0, 0, 0));
     gl::draw(screenTexture, drawBounds);
+
+#ifdef debug
+    gl::enableAlphaBlending();
+    gl::color(ColorA(0.0f, 1.0f, 0.0f, 0.9f));
+    std::string debugModeStr = "press J to enable/disable single step mode\npress K to single step";
+    float fontNameWidth = textureFont->measureString(debugModeStr).x;
+    textureFont->drawString(debugModeStr, vec2(getWindowWidth()-fontNameWidth-10,
+                                               getWindowHeight()-textureFont->getDescent()-15));
+    gl::disableAlphaBlending();
+    gl::color(Color(1, 0, 0));
+#endif
 }
 
 CINDER_APP(ChippyApp, RendererGl, prepareSettings)
