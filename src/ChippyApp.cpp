@@ -2,6 +2,8 @@
 #include "cinder/app/RendererGl.h"
 #include "cinder/gl/gl.h"
 
+#define debug
+
 #include "Emulator.hpp"
 
 #include <cstdlib>
@@ -17,10 +19,10 @@ const int appDefaultHeight = 320;
 void prepareSettings(App::Settings *settings)
 {
     settings->setWindowSize(appDefaultWidth, appDefaultHeight);
-    settings->setTitle("Chippy [Chip-8 Emulator/Interpreter]");
+    settings->setTitle("Chippy [Chip-8 Interpreter/Emulator]");
 }
 
-#define debug
+
 
 class ChippyApp : public App {
 public:
@@ -42,6 +44,8 @@ private:
     gl::Texture2dRef screenTexture;
     Rectf textureBounds;
     Rectf drawBounds;
+    
+    bool dbgSingleStepKeyPressed = false;
     
     void renderDisplayToTexture();
     void renderDisplayToConsole();
@@ -138,6 +142,9 @@ void ChippyApp::keyDown(KeyEvent event)
         case KeyEvent::KEY_v:
             chipEmulator.setKeyPressed(0xF);
             break;
+        case KeyEvent::KEY_k:
+            dbgSingleStepKeyPressed = true;
+            break;
     }
 }
 
@@ -212,41 +219,43 @@ void ChippyApp::update()
 {
     // run at 60hz say 60 instructions per second
     
-    static double clockSpeedTimer = 0;
-    static double t60 = 0; // get reset after every second;
+    static double cpuClockSpeedTimer = 0;
+    static double t60 = 0;
     double secondsToWait = (double)1/120;
     
-    
-    if ((getElapsedSeconds() - clockSpeedTimer) > secondsToWait) {
+    if ((getElapsedSeconds() - cpuClockSpeedTimer) > secondsToWait) {
+#ifdef debug
+        if (dbgSingleStepKeyPressed) {
+            chipEmulator.cpuCycle();
+            if (chipEmulator.drawDisplay) {
+                renderDisplayToTexture();
+                chipEmulator.drawDisplay = false;
+            }
+        }
+        dbgSingleStepKeyPressed = false;
+#else
         chipEmulator.cpuCycle();
-    
         if (chipEmulator.drawDisplay) {
             renderDisplayToTexture();
-#ifdef debug
-          //  renderDisplayToConsole();
-#endif
             chipEmulator.drawDisplay = false;
         }
-        
+    
+#endif
     }
     
     double t60elapsed = getElapsedSeconds() - t60;
     if (t60elapsed > 1) {
-        console() << chipEmulator.statInstructionCount << " Instructions executed in " << t60elapsed << " seconds" << std::endl;
+        //console() << chipEmulator.statInstructionCount << " Instructions executed in " << t60elapsed << " seconds" << std::endl;
         chipEmulator.statInstructionCount = 0;
         t60 = getElapsedSeconds();
     }
     
-    clockSpeedTimer = getElapsedSeconds();
+    cpuClockSpeedTimer = getElapsedSeconds();
 }
 
 void ChippyApp::draw()
 {
     gl::clear( Color( 0, 0, 0 ) );
-#ifdef debug
-    
-#endif
-    
     gl::draw(screenTexture, drawBounds);
 }
 

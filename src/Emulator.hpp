@@ -43,6 +43,8 @@ private:
     uint16_t pc, I;
     uint16_t stack[16];
     
+    std::string currentProgram {""};
+    
     
     enum { V0, VF = 0xF};
     
@@ -142,6 +144,11 @@ private:
     void ldBRegOpcodeFunc();
     void ldMemRegOpcodeFunc();
     void ldRegMemOpcodeFunc();
+    
+    
+    // functions for debugging purposes ... exposes internal structures.
+    uint8_t dbgGetIReg() { return I; }
+    
 };
 
 #endif /* Emulator_hpp */
