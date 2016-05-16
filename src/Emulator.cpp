@@ -96,6 +96,9 @@ void Emulator::initialize(bool reset)
     delayTimer = soundTimer = 0;
     sp = -1;
     I = 0;
+   
+    // clear states
+    waitForKey = false;
     
     
     statInstructionCount = 0;
@@ -104,6 +107,7 @@ void Emulator::initialize(bool reset)
     for (int i = 0; i < 32; ++i)
         for (int j = 0; j < 64; ++j)
             display[i][j] = 0;
+    drawDisplay = true;
     
     pc = 0x200;
 }
@@ -302,6 +306,7 @@ void Emulator::seByteOpcodeFunc()
 void Emulator::sneByteOpcodeFunc()
 {
     DBG_PRINT_FUNC;
+    DBG_PRINT_VAR_DEC(pc);
     if (vReg[op_x] != op_kk)
         pc += 2;
     pc += 2;
@@ -320,6 +325,9 @@ void Emulator::ldRegByteOpcodeFunc()
     DBG_PRINT_FUNC;
     vReg[op_x] = op_kk;
     pc += 2;
+    DBG_PRINT_VAR(op_kk);
+    DBG_PRINT_VAR(vReg[op_x]);
+    
 }
 
 void Emulator::addRegByteOpcodeFunc()
