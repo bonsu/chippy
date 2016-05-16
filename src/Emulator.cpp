@@ -49,9 +49,19 @@
                                         << "\t" << std::bitset<8>(pixel) << std::endl;\
                                     } while (0)
 
+#define DBG_PRINT_BINARY(b) do {\
+                                        DBG_OUT << "\t" << #b <<": 0x" << std::setw(2) << std::setfill('0') << std::right << std::hex << (int)b \
+                                        << "\t" << std::bitset<8>(b) << std::endl;\
+                                    } while (0)
+
 #else
-#define DBG_OUT
+#define DBG_OUT do { } while (0)
 #define DBG_PRINT_FUNC
+#define DBG_PRINT(s)
+#define DBG_PRINT_VAR(var)
+#define DBG_PRINT_VAR_DEC(var)
+#define DBG_PRINT_REG
+#define DBG_PRINT_PIXEL_DATA(pixel)
 #endif
 
 std::random_device rd;
@@ -84,15 +94,20 @@ void Emulator::initialize(bool reset)
         vReg[i] = keys[i] = stack[i] = 0;
     
     delayTimer = soundTimer = 0;
-    sp = 0;
+    sp = -1;
     I = 0;
-    pc = 0x200;
+    
     
     statInstructionCount = 0;
     
     // clear the display
-    clsOpcodeFunc();
+    for (int i = 0; i < 32; ++i)
+        for (int j = 0; j < 64; ++j)
+            display[i][j] = 0;
+    
+    pc = 0x200;
 }
+
 
 void Emulator::reset()
 {
@@ -143,19 +158,25 @@ void Emulator::cpuCycle()
     // encapsulate everything in wait for key check
     if (!waitForKey) {
         // fetch, decode, execute;
-        uint16_t opcode = (memory[pc] << 8) | memory[pc + 1]; pc += 2;
-        decodeInstr(opcode);
-        DBG_OUT << std::setw(4) << std::setfill('0') <<std::hex << opcode << std::setfill(' ');
-        // call the right opcode function for opcode.
-        (this->*opcodeFuncTable[op_instr])();
-        if (delayTimer)
-            --delayTimer;
-        
-        // TODO: implement
-        if (soundTimer)
-            --soundTimer;
-        
-        ++statInstructionCount;
+        if (pc < 0x1000) {
+            uint16_t opcode = (memory[pc] << 8) | memory[pc + 1];
+            decodeInstr(opcode);
+            DBG_OUT << std::setw(4) << std::setfill('0') <<std::hex << opcode << std::setfill(' ');
+            // call the right opcode function for opcode.
+            (this->*opcodeFuncTable[op_instr])();
+            
+            if (delayTimer)
+                --delayTimer;
+            
+            // TODO: implement
+            if (soundTimer)
+                --soundTimer;
+            
+            ++statInstructionCount;
+            DBG_OUT << "\t\t\t\t";
+            DBG_PRINT_VAR_DEC(pc);
+            //pc += 2;
+        }
     }
 }
 
@@ -195,23 +216,28 @@ void Emulator::opcodeEDispatch()
 void Emulator::opcodeFDispatch()
 {
     if (op_kk == 0x07)
-        this->ldDelayRegOpcodeFunc();
-    if (op_kk == 0x0A)
+        this->ldRegDelayOpcodeFunc();
+    else if (op_kk == 0x0A)
         this->ldRegKeyOpcodeFunc();
-    if (op_kk == 0x15)
+    else if (op_kk == 0x15)
         this->ldDelayRegOpcodeFunc();
-    if (op_kk == 0x18)
+    else if (op_kk == 0x18)
         this->ldSoundRegOpcodeFunc();
-    if (op_kk == 0x1E)
+    else if (op_kk == 0x1E)
         this->addIRegOpcodeFunc();
-    if (op_kk == 0x29)
+    else if (op_kk == 0x29)
         this->ldFRegOpcodeFunc();
-    if (op_kk == 0x33)
+    else if (op_kk == 0x33)
         this->ldBRegOpcodeFunc();
-    if (op_kk == 0x55)
+    else if (op_kk == 0x55)
         this->ldMemRegOpcodeFunc();
-    if (op_kk == 0x65)
+    else if (op_kk == 0x65)
         this->ldRegMemOpcodeFunc();
+    else {
+        DBG_PRINT("opcode decode fail");
+        DBG_PRINT_VAR(op_kk);
+        assert(false);
+    }
 }
 
 void Emulator::clsOpcodeFunc()
@@ -220,31 +246,46 @@ void Emulator::clsOpcodeFunc()
     for (int i = 0; i < 32; ++i)
         for (int j = 0; j < 64; ++j)
             display[i][j] = 0;
+    pc += 2;
 }
 
 void Emulator::retOpcodeFunc()
 {
     DBG_PRINT_FUNC;
+    DBG_PRINT_VAR_DEC(sp);
     pc = stack[sp--];
+    DBG_PRINT_VAR_DEC(pc);
+    DBG_PRINT_VAR_DEC(sp);
+    
 }
 
 void Emulator::sysOpcodeFunc()
 {
     DBG_PRINT_FUNC;
-    __NOT_IMPLEMENTED_CONTINUE__
+    pc += 2;
+//    __NOT_IMPLEMENTED_CONTINUE__
 }
 
 void Emulator::jpOpcodeFunc()
 {
     DBG_PRINT_FUNC;
     pc = op_nnn;
+    DBG_PRINT_VAR_DEC(op_nnn);
+    DBG_PRINT_VAR_DEC(pc);
+    DBG_PRINT_VAR(memory[pc]);
+    DBG_PRINT_VAR(memory[pc+1]);
 }
 
 void Emulator::callOpcodeFunc()
 {
     DBG_PRINT_FUNC;
-    stack[++sp] = pc;
+    DBG_PRINT_VAR_DEC(sp);
+    stack[++sp] = pc + 2; // set return address, bug
+    DBG_PRINT_VAR_DEC(sp);
+    DBG_PRINT_VAR_DEC(stack[sp]);
     pc = op_nnn;
+    DBG_PRINT_VAR_DEC(op_nnn);
+    DBG_PRINT_VAR_DEC(pc);
     
 }
 
@@ -253,6 +294,9 @@ void Emulator::seByteOpcodeFunc()
     DBG_PRINT_FUNC;
     if (vReg[op_x] == op_kk)
         pc += 2;
+    DBG_PRINT_VAR(vReg[op_x]);
+    DBG_PRINT_VAR(op_kk);
+    pc += 2;
 }
 
 void Emulator::sneByteOpcodeFunc()
@@ -260,6 +304,7 @@ void Emulator::sneByteOpcodeFunc()
     DBG_PRINT_FUNC;
     if (vReg[op_x] != op_kk)
         pc += 2;
+    pc += 2;
 }
 
 void Emulator::seRegOpcodeFunc()
@@ -267,42 +312,49 @@ void Emulator::seRegOpcodeFunc()
     DBG_PRINT_FUNC;
     if (vReg[op_x] == vReg[op_y])
         pc += 2;
+    pc += 2;
 }
 
 void Emulator::ldRegByteOpcodeFunc()
 {
     DBG_PRINT_FUNC;
     vReg[op_x] = op_kk;
+    pc += 2;
 }
 
 void Emulator::addRegByteOpcodeFunc()
 {
     DBG_PRINT_FUNC;
     vReg[op_x] = vReg[op_x] + op_kk;
+    pc += 2;
 }
 
 void Emulator::ldRegRegOpcodeFunc()
 {
     DBG_PRINT_FUNC;
     vReg[op_x] = vReg[op_y];
+    pc += 2;
 }
 
 void Emulator::orOpcodeFunc()
 {
     DBG_PRINT_FUNC;
     vReg[op_x] = vReg[op_x] | vReg[op_y];
+    pc += 2;
 }
 
 void Emulator::andOpcodeFunc()
 {
     DBG_PRINT_FUNC;
     vReg[op_x] = vReg[op_x] & vReg[op_y];
+    pc += 2;
 }
 
 void Emulator::xorOpcodeFunc()
 {
     DBG_PRINT_FUNC;
     vReg[op_x] = vReg[op_x] ^ vReg[op_y];
+    pc += 2;
 }
 
 void Emulator::addRegRegOpcodeFunc()
@@ -316,6 +368,8 @@ void Emulator::addRegRegOpcodeFunc()
     
     vReg[op_x] = r & 0xFF;
     
+    pc += 2;
+    
 }
 
 void Emulator::subOpcodeFunc()
@@ -327,16 +381,23 @@ void Emulator::subOpcodeFunc()
         vReg[VF] = 0;
     
     vReg[op_x] = vReg[op_x] - vReg[op_y];
+    
+    pc += 2;
 }
 
 void Emulator::shrOpcodeFunc()
 {
     DBG_PRINT_FUNC;
+    DBG_PRINT_BINARY(vReg[op_x]);
     if (vReg[op_x] & 1)
         vReg[VF] = 1;
     else
         vReg[VF] = 0;
     vReg[op_x] >>= 1;
+    DBG_PRINT_BINARY(vReg[op_x]);
+    DBG_PRINT_VAR(vReg[VF]);
+    
+    pc += 2;
 }
 
 void Emulator::subnOpcodeFunc()
@@ -349,16 +410,22 @@ void Emulator::subnOpcodeFunc()
     
     vReg[op_x] = vReg[op_y] - vReg[op_x];
     
+    pc += 2;
 }
 
 void Emulator::shlOpcodeFunc()
 {
     DBG_PRINT_FUNC;
+    DBG_PRINT_BINARY(vReg[op_x]);
     if ((vReg[op_x] >> 7) & 1)
         vReg[VF] = 1;
     else
         vReg[VF] = 0;
     vReg[op_x] <<= 1;
+    DBG_PRINT_BINARY(vReg[op_x]);
+    DBG_PRINT_VAR(vReg[VF]);
+    
+    pc += 2;
 }
 
 void Emulator::sneRegRegOpcodeFunc()
@@ -366,19 +433,22 @@ void Emulator::sneRegRegOpcodeFunc()
     DBG_PRINT_FUNC;
     if (vReg[op_x] != vReg[op_y])
         pc += 2;
+    pc += 2;
 }
 
 void Emulator::ldIOpcodeFunc()
 {
     I = op_nnn;
+    pc += 2;
     DBG_PRINT_FUNC;
     DBG_PRINT_VAR(op_nnn);
-    DBG_PRINT_VAR(I);
+    DBG_PRINT_VAR_DEC(I);
 }
 
 void Emulator::jpV0OpcodeFunc()
 {
     pc = vReg[V0] + op_nnn;
+    pc += 2;
     DBG_PRINT_FUNC;
     DBG_PRINT_VAR(vReg[V0]);
     DBG_PRINT_VAR(op_nnn);
@@ -391,6 +461,8 @@ void Emulator::rndOpcodeFunc()
     auto rndNum = dis(rndGenerator);
 
     vReg[op_x] = rndNum & op_kk;
+    
+    pc += 2;
     
     DBG_PRINT_FUNC;
     DBG_PRINT_VAR(rndNum);
@@ -419,6 +491,8 @@ void Emulator::drwOpcodeFunc()
     }
     drawDisplay = true;
     
+    pc += 2;
+    
     DBG_PRINT_VAR(vReg[VF]);
 }
 
@@ -427,6 +501,7 @@ void Emulator::skpOpcodeFunc()
     if (keys[vReg[op_x]] == 1)
         pc += 2;
     
+    pc += 2;
     DBG_PRINT_FUNC;
     DBG_PRINT_VAR(keys[vReg[op_x]]);
     DBG_PRINT_VAR(pc);
@@ -437,6 +512,7 @@ void Emulator::sknpOpcodeFunc()
     if (keys[vReg[op_x]] == 0)
         pc += 2;
     
+    pc += 2;
     DBG_PRINT_FUNC;
     DBG_PRINT_VAR(keys[vReg[op_x]]);
     DBG_PRINT_VAR(pc);
@@ -446,6 +522,7 @@ void Emulator::ldRegDelayOpcodeFunc()
 {
     vReg[op_x] = delayTimer;
     
+    pc += 2;
     DBG_PRINT_FUNC;
     DBG_PRINT_VAR(delayTimer);
     DBG_PRINT_VAR(vReg[op_x]);
@@ -455,12 +532,15 @@ void Emulator::ldRegKeyOpcodeFunc()
 {
     waitForKey = true;
     
+    pc += 2;
     DBG_PRINT_FUNC;
 }
 
 void Emulator::ldDelayRegOpcodeFunc()
 {
     delayTimer = vReg[op_x];
+    pc += 2;
+    DBG_PRINT_VAR(vReg[op_x]);
     
     DBG_PRINT_FUNC;
 }
@@ -469,14 +549,19 @@ void Emulator::ldSoundRegOpcodeFunc()
 {
     soundTimer = vReg[op_x];
    
+    pc += 2;
     DBG_PRINT_FUNC;
 }
 
 void Emulator::addIRegOpcodeFunc()
 {
+    DBG_PRINT_FUNC;
+    DBG_PRINT_VAR_DEC(I);
     I += vReg[op_x];
 
-    DBG_PRINT_FUNC;
+    pc += 2;
+    DBG_PRINT_VAR_DEC(vReg[op_x]);
+    DBG_PRINT_VAR_DEC(I);
 }
 
 void Emulator::ldFRegOpcodeFunc()
@@ -484,6 +569,7 @@ void Emulator::ldFRegOpcodeFunc()
     auto fontLocation = vReg[op_x] * 5; // each font is 5 bytes
     I = fontLocation;
     
+    pc += 2;
     DBG_PRINT_FUNC;
     DBG_PRINT_VAR(vReg[op_x]);
     DBG_PRINT_VAR(fontLocation);
@@ -496,6 +582,7 @@ void Emulator::ldBRegOpcodeFunc()
     memory[I + 1] = (vReg[op_x] / 10) % 10;
     memory[I + 2] = vReg[op_x] % 10;
 
+    pc += 2;
     DBG_PRINT_FUNC;
     DBG_PRINT_VAR_DEC(vReg[op_x]);
     DBG_PRINT_VAR_DEC(memory[I]);
@@ -511,14 +598,17 @@ void Emulator::ldMemRegOpcodeFunc()
         memory[I + i] = vReg[i];
         DBG_PRINT_VAR(memory[I + i]);
     }
+    pc += 2;
 }
 
 void Emulator::ldRegMemOpcodeFunc()
 {
     DBG_PRINT_FUNC;
+    DBG_PRINT_VAR_DEC(I);
     for (int i = 0; i < 16; ++i) {
         vReg[i] = memory[I + i];
         DBG_PRINT_VAR(memory[I + i]);
     }
     DBG_PRINT_REG;
+    pc += 2;
 }

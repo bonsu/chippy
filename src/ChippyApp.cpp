@@ -258,10 +258,11 @@ void ChippyApp::update()
         }
 #else
         chipEmulator.cpuCycle();
-        if (chipEmulator.drawDisplay) {
+        /*if (chipEmulator.drawDisplay) {
             renderDisplayToTexture();
             chipEmulator.drawDisplay = false;
-        }
+        }*/
+        renderDisplayToTexture();
     
 #endif
     }

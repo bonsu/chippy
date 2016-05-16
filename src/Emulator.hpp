@@ -39,8 +39,9 @@ private:
     uint8_t memory[0x1000];
     uint8_t *font = memory;
     uint8_t vReg[16], keys[16];
-    uint8_t delayTimer, soundTimer, sp;
+    uint8_t delayTimer, soundTimer;
     uint16_t pc, I;
+    int8_t sp;
     uint16_t stack[16];
     
     std::string currentProgram {""};
