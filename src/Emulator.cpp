@@ -594,7 +594,7 @@ void Emulator::ldMemRegOpcodeFunc()
 {
     DBG_PRINT_FUNC;
     DBG_PRINT_REG;
-    for (int i = 0; i < 16; ++i) {
+    for (int i = 0; i <= op_x; ++i) {
         memory[I + i] = vReg[i];
         DBG_PRINT_VAR(memory[I + i]);
     }
@@ -605,7 +605,7 @@ void Emulator::ldRegMemOpcodeFunc()
 {
     DBG_PRINT_FUNC;
     DBG_PRINT_VAR_DEC(I);
-    for (int i = 0; i < 16; ++i) {
+    for (int i = 0; i <= op_x; ++i) {
         vReg[i] = memory[I + i];
         DBG_PRINT_VAR(memory[I + i]);
     }
