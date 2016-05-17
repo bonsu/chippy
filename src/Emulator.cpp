@@ -14,55 +14,8 @@
 #include <limits>
 #include <random>
 
+#include "DebugUtils.h"
 #include "Emulator.hpp"
-
-#define debug
-
-#define __NOT_IMPLEMENTED__ assert(true);
-#define __NOT_IMPLEMENTED_CONTINUE__ return;
-
-#ifdef debug
-#define DBG_OUT cinder::app::console() << std::setw(0) <<  std::setfill(' ')
-
-#define DBG_PRINT(s) do { DBG_OUT << s << std::endl; } while (0)
-
-#define DBG_PRINT_FUNC do { DBG_OUT << "->" << __func__ << "()" << std::endl; } while (0)
-
-#define DBG_PRINT_VAR(var) do { DBG_OUT << "\t" << std::setw(15) << #var << " \t= 0x" << std::setw(2) << std::setfill('0') << std::right << std::hex << (int)var << std::setfill(' ') << std::endl; } while (0)
-
-#define DBG_PRINT_VAR_DEC(var) do { DBG_OUT << "\t" << std::setw(15) << #var << " \t= " << std::dec << (int)var << std::setfill(' ') << std::endl; } while (0)
-
-#define DBG_PRINT_REG do { { int i = 0; \
-                             DBG_OUT << "\t";\
-                             for (uint8_t v : vReg) {\
-                                 DBG_OUT << "V" << i << ": 0x" << std::setw(2) << std::setfill('0') << std::right << std::hex << (int)v;\
-                                 DBG_OUT << "  "; \
-                                 ++i;\
-                             }\
-                             DBG_OUT << std::setfill(' ');\
-                             DBG_OUT << std::endl;\
-                            }\
-                          } while (0)
-
-#define DBG_PRINT_PIXEL_DATA(pixel) do {\
-                                        DBG_OUT << "\t" << "px: 0x" << std::setw(2) << std::setfill('0') << std::right << std::hex << (int)pixel \
-                                        << "\t" << std::bitset<8>(pixel) << std::endl;\
-                                    } while (0)
-
-#define DBG_PRINT_BINARY(b) do {\
-                                        DBG_OUT << "\t" << #b <<": 0x" << std::setw(2) << std::setfill('0') << std::right << std::hex << (int)b \
-                                        << "\t" << std::bitset<8>(b) << std::endl;\
-                                    } while (0)
-
-#else
-#define DBG_OUT do { } while (0)
-#define DBG_PRINT_FUNC
-#define DBG_PRINT(s)
-#define DBG_PRINT_VAR(var)
-#define DBG_PRINT_VAR_DEC(var)
-#define DBG_PRINT_REG
-#define DBG_PRINT_PIXEL_DATA(pixel)
-#endif
 
 std::random_device rd;
 std::mt19937 rndGenerator(rd());
@@ -165,7 +118,7 @@ void Emulator::cpuCycle()
         if (pc < 0x1000) {
             uint16_t opcode = (memory[pc] << 8) | memory[pc + 1];
             decodeInstr(opcode);
-            DBG_OUT << std::setw(4) << std::setfill('0') <<std::hex << opcode << std::setfill(' ');
+            DBG_PRINT_NO_NEWLINE(std::setw(4) << std::setfill('0') << std::hex << opcode << std::setfill(' '));
             // call the right opcode function for opcode.
             (this->*opcodeFuncTable[op_instr])();
             
@@ -177,7 +130,7 @@ void Emulator::cpuCycle()
                 --soundTimer;
             
             ++statInstructionCount;
-            DBG_OUT << "\t\t\t\t";
+            DBG_PRINT_NO_NEWLINE("\t\t\t\t");
             DBG_PRINT_VAR_DEC(pc);
             //pc += 2;
         }

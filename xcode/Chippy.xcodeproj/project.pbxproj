@@ -42,6 +42,7 @@
 		5323E6B10EAFCA74003A9687 /* CoreVideo.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreVideo.framework; path = /System/Library/Frameworks/CoreVideo.framework; sourceTree = "<absolute>"; };
 		8D1107320486CEB800E47090 /* Chippy.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Chippy.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A6196948568845F1A58BFAD5 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		BC69B9AD1CEB43A000C5C179 /* DebugUtils.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = DebugUtils.h; path = ../src/DebugUtils.h; sourceTree = "<group>"; };
 		BCD190891CE15802002806AC /* Emulator.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Emulator.cpp; path = ../src/Emulator.cpp; sourceTree = "<group>"; };
 		BCD1908A1CE15802002806AC /* Emulator.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = Emulator.hpp; path = ../src/Emulator.hpp; sourceTree = "<group>"; };
 		E5F1F4EB299D4D47A5854786 /* CinderApp.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; name = CinderApp.icns; path = ../resources/CinderApp.icns; sourceTree = "<group>"; };
@@ -82,6 +83,7 @@
 				BCD190891CE15802002806AC /* Emulator.cpp */,
 				BCD1908A1CE15802002806AC /* Emulator.hpp */,
 				2F156F8F24584B3CB6CD6FD9 /* ChippyApp.cpp */,
+				BC69B9AD1CEB43A000C5C179 /* DebugUtils.h */,
 			);
 			name = Source;
 			sourceTree = "<group>";

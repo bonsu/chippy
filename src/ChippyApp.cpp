@@ -2,8 +2,7 @@
 #include "cinder/app/RendererGl.h"
 #include "cinder/gl/gl.h"
 
-#define debug
-
+#include "DebugUtils.h"
 #include "Emulator.hpp"
 
 #include <cstdlib>
@@ -19,7 +18,7 @@ const int appDefaultHeight = 320;
 void prepareSettings(App::Settings *settings)
 {
     settings->setWindowSize(appDefaultWidth, appDefaultHeight);
-#ifdef debug
+#if debug
     settings->setTitle("Chippy [Chip-8 Interpreter/Emulator] (Debug Mode)");
 #else
     settings->setTitle("Chippy [Chip-8 Interpreter/Emulator]");
@@ -238,7 +237,7 @@ void ChippyApp::update()
     double secondsToWait = (double)1/120;
     
     if ((getElapsedSeconds() - cpuClockSpeedTimer) > secondsToWait) {
-#ifdef debug
+#if debug
         if (dbgToggleSingleStepMode) {
             if (dbgSingleStepKeyPressed) {
                 chipEmulator.cpuCycle();
@@ -284,7 +283,7 @@ void ChippyApp::draw()
     gl::clear(Color(0, 0, 0));
     gl::draw(screenTexture, drawBounds);
 
-#ifdef debug
+#if debug
     gl::enableAlphaBlending();
     gl::color(ColorA(0.0f, 1.0f, 0.0f, 0.9f));
     std::string debugModeStr = "press J to enable/disable single step mode\npress K to single step";
