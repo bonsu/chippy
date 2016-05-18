@@ -1,12 +1,11 @@
 # chippy
-A Chip-8 Interpreter/Emulator in C++; uses the Cinder Framework for creative coding (https://libcinder.org/) for graphics and audio.
+A Chip-8 Interpreter/Emulator in C++. 
 
-This is in alpha stage of development (i.e core code implemented with some working programs and some completely broken programs)
+- Uses the Cinder Framework v0.9.0 (https://libcinder.org/) for graphics and audio.
+- Debug mode build switch allows halting the program and allows single-stepping through the program. 
+- Includes some sample programs. Drag .ch8 file ontop of the program window to run.
 
-TODO:
- - write tests and debug chip8 programs that don't currently work (e.g blinky)
- - implement audio
- - general code cleanup 
-
-FUTURE:
- - debug mode with overlay graphics (halt execution, examine registers).
+Chippy in action:
+![IBM logo debug mode](screenshots/Chippy_IBM_Logo_Debug_Mode.png)
+![Pong debug mode](screenshots/Chippy_Pong_Debug_Mode.png)
+![Space Invaders](screenshots/Chippy_Space_Invaders.png)
