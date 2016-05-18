@@ -110,6 +110,14 @@ void Emulator::setKeyReleased(const uint8_t key)
     keys[key] = 0;
 }
 
+bool Emulator::makeSound()
+{
+    if (soundTimer)
+        return true;
+    
+    return false;
+}
+
 void Emulator::cpuCycle()
 {
     // encapsulate everything in wait for key check

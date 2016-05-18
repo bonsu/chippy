@@ -33,6 +33,7 @@ public:
     void cpuCycle();
     void setKeyPressed(uint8_t);
     void setKeyReleased(uint8_t);
+    bool makeSound();
     
     
 private:

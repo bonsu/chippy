@@ -2,6 +2,9 @@
 #include "cinder/app/RendererGl.h"
 #include "cinder/gl/gl.h"
 
+#include "cinder/audio/Voice.h"
+#include "cinder/audio/Source.h"
+
 #include "DebugUtils.h"
 #include "Emulator.hpp"
 
@@ -39,6 +42,10 @@ public:
     void resize() override;
     void update() override;
     void draw() override;
+    
+    audio::VoiceRef chipSound;
+    
+    float phase;
 
 private:
     Emulator chipEmulator;
@@ -99,6 +106,20 @@ void ChippyApp::setup()
     // setup font
     fontName = Font("Helvetica", 12);
     textureFont = gl::TextureFont::create(fontName);
+    
+    // setup audio thread
+    phase = 0.0f;
+    
+    chipSound = audio::Voice::create( [this] ( audio::Buffer *buffer, size_t sampleRate ) {
+        float *channel0 = buffer->getChannel( 0 );
+        
+        // generate a 440 hertz sine wave
+        float phaseIncr = ( 440.0f / (float)sampleRate ) * 2 * (float)M_PI;
+        for( size_t i = 0; i < buffer->getNumFrames(); i++ )    {
+            phase = fmodf(phase + phaseIncr, 2 * M_PI);
+            channel0[i] = std::sin(phase);
+        }
+    } );
     
 }
 
@@ -234,7 +255,7 @@ void ChippyApp::update()
     
     static double cpuClockSpeedTimer = 0;
     static double t60 = 0;
-    double secondsToWait = (double)1/120;
+    double secondsToWait = (double)1/1200;
     
     if ((getElapsedSeconds() - cpuClockSpeedTimer) > secondsToWait) {
 #if debug
@@ -257,11 +278,18 @@ void ChippyApp::update()
         }
 #else
         chipEmulator.cpuCycle();
-        /*if (chipEmulator.drawDisplay) {
+        if (chipEmulator.drawDisplay) {
             renderDisplayToTexture();
             chipEmulator.drawDisplay = false;
-        }*/
-        renderDisplayToTexture();
+        }
+        if (chipEmulator.makeSound()) {
+            if (!chipSound->isPlaying())
+                chipSound->start();
+        }
+        else {
+            if (chipSound->isPlaying())
+                chipSound->stop();
+        }
     
 #endif
     }
