@@ -12,6 +12,11 @@ Keyboard mapping:
   - 7	8	9	E  | A S D F
   - A	0	B	F  | Z X C V
 
+
+Known issues:
+- framerate slow down after some time. currently investigating this.
+- haven't tested all programs. seen some programs to contain invalid opcodes.
+
 Chippy in action:
 ![IBM logo debug mode](screenshots/Chippy_IBM_Logo_Debug_Mode.png)
 ![Pong debug mode](screenshots/Chippy_Pong_Debug_Mode.png)
