@@ -23,6 +23,7 @@
 #define DBG_PRINT_FUNC do { DBG_OUT << "->" << __func__ << "()" << std::endl; } while (0)
 #define DBG_PRINT_VAR(var) do { DBG_OUT << "\t" << std::setw(15) << #var << " \t= 0x" << std::setw(2) << std::setfill('0') << std::right << std::hex << (int)var << std::setfill(' ') << std::endl; } while (0)
 #define DBG_PRINT_VAR_DEC(var) do { DBG_OUT << "\t" << std::setw(15) << #var << " \t= " << std::dec << (int)var << std::setfill(' ') << std::endl; } while (0)
+#define DBG_PRINT_VAR_DOUBLE(var) do { DBG_OUT << "\t" << std::setw(15) << #var << " \t= " << std::dec << var << std::setfill(' ') << std::endl; } while (0)
 #define DBG_PRINT_REG do { { int i = 0; \
                              DBG_OUT << "\t";\
                              for (uint8_t v : vReg) {\
@@ -52,6 +53,7 @@
 #define DBG_PRINT_NO_NEWLINE(s)
 #define DBG_PRINT_VAR(var)
 #define DBG_PRINT_VAR_DEC(var)
+#define DBG_PRINT_VAR_DOUBLE(var)
 #define DBG_PRINT_REG
 #define DBG_PRINT_PIXEL_DATA(pixel)
 #define DBG_PRINT_BINARY(b)

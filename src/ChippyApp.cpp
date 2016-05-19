@@ -17,10 +17,13 @@ using namespace ci::app;
 
 const int appDefaultWidth = 640;
 const int appDefaultHeight = 320;
+const float frameRate = 300;
 
 void prepareSettings(App::Settings *settings)
 {
     settings->setWindowSize(appDefaultWidth, appDefaultHeight);
+    //settings->setFrameRate(frameRate);
+    //settings->disableFrameRate();
 #if debug
     settings->setTitle("Chippy [Chip-8 Interpreter/Emulator] (Debug Mode)");
 #else
@@ -91,6 +94,8 @@ void ChippyApp::renderDisplayToConsole()
 
 void ChippyApp::setup()
 {
+    disableFrameRate();
+    gl::enableVerticalSync(false);
     // clear texData
     for (int y = 0; y < 32; ++y)
         for (int x = 0; x < 64; ++x)
@@ -109,7 +114,6 @@ void ChippyApp::setup()
     
     // setup audio thread
     phase = 0.0f;
-    
     chipSound = audio::Voice::create( [this] ( audio::Buffer *buffer, size_t sampleRate ) {
         float *channel0 = buffer->getChannel( 0 );
         
@@ -251,57 +255,54 @@ void ChippyApp::resize()
 
 void ChippyApp::update()
 {
-    // run at 60hz say 60 instructions per second
-    
-    static double cpuClockSpeedTimer = 0;
-    static double t60 = 0;
-    double secondsToWait = (double)1/1200;
-    
-    if ((getElapsedSeconds() - cpuClockSpeedTimer) > secondsToWait) {
 #if debug
-        if (dbgToggleSingleStepMode) {
-            if (dbgSingleStepKeyPressed) {
-                chipEmulator.cpuCycle();
-                if (chipEmulator.drawDisplay) {
-                    renderDisplayToTexture();
-                    chipEmulator.drawDisplay = false;
-                }
-            }
-            dbgSingleStepKeyPressed = false;
-        }
-        else {
+    if (dbgToggleSingleStepMode) {
+        if (dbgSingleStepKeyPressed) {
             chipEmulator.cpuCycle();
             if (chipEmulator.drawDisplay) {
                 renderDisplayToTexture();
                 chipEmulator.drawDisplay = false;
             }
         }
-#else
+        dbgSingleStepKeyPressed = false;
+    }
+    else {
         chipEmulator.cpuCycle();
         if (chipEmulator.drawDisplay) {
             renderDisplayToTexture();
             chipEmulator.drawDisplay = false;
         }
-        if (chipEmulator.makeSound()) {
-            if (!chipSound->isPlaying())
-                chipSound->start();
-        }
-        else {
-            if (chipSound->isPlaying())
-                chipSound->stop();
-        }
-    
-#endif
+    }
+#else
+    chipEmulator.cpuCycle();
+    if (chipEmulator.drawDisplay) {
+        renderDisplayToTexture();
+        chipEmulator.drawDisplay = false;
+    }
+    if (chipEmulator.makeSound()) {
+        if (!chipSound->isPlaying())
+            chipSound->start();
+    }
+    else {
+        if (chipSound->isPlaying())
+            chipSound->stop();
     }
     
+#endif
+   // }
+#if debug
+    
+    static double cpuClockSpeedTimer = 0;
+    static double t60 = 0;
     double t60elapsed = getElapsedSeconds() - t60;
-    if (t60elapsed > 1) {
-        //console() << chipEmulator.statInstructionCount << " Instructions executed in " << t60elapsed << " seconds" << std::endl;
+    if (t60elapsed >= 1) {
+        console() << chipEmulator.statInstructionCount << " Instructions executed in " << t60elapsed << " seconds" << std::endl;
         chipEmulator.statInstructionCount = 0;
         t60 = getElapsedSeconds();
     }
     
     cpuClockSpeedTimer = getElapsedSeconds();
+#endif
 }
 
 void ChippyApp::draw()
